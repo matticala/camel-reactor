@@ -22,7 +22,7 @@ import reactor.core.spec.Reactors;
 
 /**
  *
- * @author CalabroM
+ * @author matticala
  * @since 21-nov-2014
  * @version $$Revision$$
  * <p>
