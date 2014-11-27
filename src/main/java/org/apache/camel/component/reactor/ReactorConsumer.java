@@ -1,22 +1,23 @@
 /*
- * Copyright 2014 Matteo Massimo Calabro'.
+ * Copyright 2014 Matteo Massimo Calabro'
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.camel.component.reactor;
 
-import org.apache.camel.AsyncCallback;
-import org.apache.camel.AsyncProcessor;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
+import java.util.ArrayList;
+import java.util.concurrent.*;
+import org.apache.camel.*;
 import org.apache.camel.impl.DefaultConsumer;
 import org.apache.camel.util.AsyncProcessorConverterHelper;
 import org.slf4j.Logger;
@@ -27,7 +28,6 @@ import reactor.event.registry.Registration;
 import reactor.event.selector.Selectors;
 import reactor.function.Consumer;
 
-import java.util.ArrayList;
 
 /**
  *
@@ -43,6 +43,8 @@ import java.util.ArrayList;
 public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReactorConsumer.class);
+
+    private final ExecutorService pool = this.getEndpoint().getCamelContext().getExecutorServiceManager().newDefaultThreadPool(this, "ReactorInOutThreads");
 
     protected final Reactor reactor;
 
@@ -97,10 +99,16 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
     }
 
     @Override
-    public void accept(Event<?> t) {
+    public void accept(final Event<?> t) {
         final Exchange exchange = getEndpoint().createExchange();
+        if(t.getReplyTo() != null) {
+            exchange.setPattern(ExchangePattern.InOut);
+            Future<Event<?>> future = pool.submit(new ReactorReplyConsumer(exchange));
+            LOG.debug("##### Notifying response: " + future + " on selector " + t.getReplyTo().toString());
+            reactor.notify(t.getReplyTo(), Event.wrap(future));
+        }
         exchange.getIn().getHeaders().putAll(t.getHeaders().asMap());
-        exchange.getIn().setBody(t, t.getClass());
+        exchange.getIn().setBody(t);
         this.processor.process(exchange, EmptyAsyncCallback.DUMMY);
     }
 
@@ -113,6 +121,47 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
             //
         }
 
+    }
+
+    private static class ReactorReplyConsumer implements Callable<Event<?>> {
+
+        private static final Logger LOG = LoggerFactory.getLogger(ReactorReplyConsumer.class);
+
+        private final Exchange exchange;
+
+        ReactorReplyConsumer(Exchange exchange) {
+            this.exchange = exchange;
+        }
+
+        @Override
+        public Event<?> call() throws Exception {
+            CountDownLatch timeout = new CountDownLatch(20);
+            while(timeout.getCount() > 0 & !exchange.hasOut()) {
+                try {
+                    timeout.await(1, TimeUnit.SECONDS);
+                    timeout.countDown();
+                } catch (InterruptedException e) {
+                    LOG.debug(e.getMessage(), e);
+                }
+            }
+            Object reply = exchange.getOut().getBody();
+            Event<?> e;
+            if(reply == null) {
+                 /*
+                  * FIXME: Out is filled with In almost immediately. Why?
+                  */
+                e = exchange.getIn().getBody(Event.class);
+                e.consumeError(new TimeoutException("Timeout waiting for reply"));
+            } else {
+                if (reply instanceof Event) {
+                  e = (Event) reply;
+                } else {
+                  e = Event.wrap(reply);
+                }
+                return e;
+            }
+            return e;
+        }
     }
 
 }
