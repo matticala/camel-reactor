@@ -16,7 +16,9 @@
 package org.apache.camel.component.reactor;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.*;
+
 import org.apache.camel.*;
 import org.apache.camel.impl.DefaultConsumer;
 import org.apache.camel.util.AsyncProcessorConverterHelper;
@@ -29,139 +31,87 @@ import reactor.event.selector.Selectors;
 import reactor.function.Consumer;
 
 /**
- *
  * TODO:
  *
  * @author matticala
- * <p>
- * @since 21-nov-2014
+ *         <p/>
  * @version $$Revision$$
- *
- * Last change: $$Date$$ Last changed by: $$Author$$
+ *          <p/>
+ *          Last change: $$Date$$ Last changed by: $$Author$$
+ * @since 21-nov-2014
  */
 public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?>> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ReactorConsumer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReactorConsumer.class);
 
-  private final ExecutorService pool = this.getEndpoint().getCamelContext().getExecutorServiceManager().newDefaultThreadPool(
-      this, "ReactorInOutThreads");
+    private final ReactorEndpoint endpoint;
 
-  protected final Reactor reactor;
+    protected final Reactor reactor;
 
-  protected final AsyncProcessor processor;
+    private final ArrayList<Registration<?>> registrations = new ArrayList<>(5);
 
-  private final ArrayList<Registration<?>> registrations = new ArrayList<>(5);
-
-  public ReactorConsumer(ReactorEndpoint endpoint, Processor processor) {
-    super(endpoint, processor);
-    this.reactor = endpoint.getReactor();
-    this.processor = AsyncProcessorConverterHelper.convert(processor);
-  }
-
-  @Override
-  public ReactorEndpoint getEndpoint() {
-    return (ReactorEndpoint) super.getEndpoint();
-  }
-
-  @Override
-  protected void doStart()
-      throws Exception {
-    super.doStart();
-
-    ReactorEndpoint endpoint = getEndpoint();
-
-    if (endpoint.isMatchAll()) {
-      registrations.add(reactor.on(Selectors.matchAll(), this));
-    } else {
-      if (endpoint.hasUri()) {
-        registrations.add(reactor.on(Selectors.uri(endpoint.getUri()), this));
-      }
-      if (endpoint.hasType()) {
-        registrations.add(reactor.on(Selectors.type(endpoint.getType()), this));
-      }
-      if (endpoint.hasRegex()) {
-        registrations.add(reactor.on(Selectors.regex(endpoint.getRegex()), this));
-      }
-
-      boolean noOtherOption = !(endpoint.hasUri() && endpoint.hasType() && endpoint.hasRegex());
-
-      if (endpoint.isObject() || noOtherOption) {
-        registrations.add(reactor.on(Selectors.object(endpoint.getSelector()), this));
-      }
-    }
-  }
-
-  @Override
-  protected void doStop()
-      throws Exception {
-    for (Registration r : registrations) {
-      r.cancel();
-    }
-    super.doStop();
-  }
-
-  @Override
-  public void accept(final Event<?> t) {
-    final Exchange exchange = getEndpoint().createExchange();
-    if (t.getReplyTo() != null) {
-      exchange.setPattern(ExchangePattern.InOut);
-      Future<Event<?>> future = pool.submit(new ReactorReplyConsumer(exchange));
-      LOG.debug("##### Notifying response: " + future + " on selector " + t.getReplyTo().toString());
-      reactor.notify(t.getReplyTo(), Event.wrap(future));
-    }
-    exchange.getIn().getHeaders().putAll(t.getHeaders().asMap());
-    exchange.getIn().setBody(t);
-    this.processor.process(exchange, EmptyAsyncCallback.DUMMY);
-  }
-
-  protected static class EmptyAsyncCallback implements AsyncCallback {
-
-    protected static final EmptyAsyncCallback DUMMY = new EmptyAsyncCallback();
-
-    @Override
-    public void done(boolean doneSync) {
-      //
-    }
-
-  }
-
-  private static class ReactorReplyConsumer implements Callable<Event<?>> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ReactorReplyConsumer.class);
-
-    private final Exchange exchange;
-
-    ReactorReplyConsumer(Exchange exchange) {
-      this.exchange = exchange;
+    public ReactorConsumer(ReactorEndpoint endpoint, Processor processor) {
+        super(endpoint, processor);
+        this.endpoint = endpoint;
+        this.reactor = endpoint.getReactor();
     }
 
     @Override
-    public Event<?> call()
-        throws Exception {
-      CountDownLatch timeout = new CountDownLatch(22);
-      while (!exchange.hasOut() && !exchange.isFailed() && !timeout.await(1000, TimeUnit.MILLISECONDS)) {
-        timeout.countDown();
-      }
-      LOG.debug(". Exchange: " + exchange);
-      Object reply = exchange.getOut().getBody();
-      Event<?> e;
-      if (reply == null) {
-        /*
-         * FIXME: Out is filled with In almost immediately. Why?
-         */
-        LOG.debug("",exchange.getException());
-        e = Event.wrap(exchange.getException());
-      } else {
-        if (reply instanceof Event) {
-          e = (Event) reply;
-        } else {
-          e = Event.wrap(reply);
+    public ReactorEndpoint getEndpoint() {
+        return (ReactorEndpoint) super.getEndpoint();
+    }
+
+    @Override
+    protected void doStart()
+            throws Exception {
+        super.doStart();
+
+        ReactorEndpoint endpoint = getEndpoint();
+        switch(endpoint.getType()) {
+            case CLASS:
+                registrations.add(reactor.on(Selectors.type((Class<?>) endpoint.getSelector()), this));
+                break;
+            case URI:
+                registrations.add(reactor.on(Selectors.uri((String) endpoint.getSelector()), this));
+                break;
+            case REGEX:
+                registrations.add(reactor.on(Selectors.regex((String) endpoint.getSelector()), this));
+                break;
+            default:
+                registrations.add(reactor.on(Selectors.object(endpoint.getSelector()), this));
         }
-      }
-      e.getHeaders().setAll(exchange.getOut().getHeaders());
-      e.setKey(exchange.getIn().getBody(Event.class).getId());
-      return e;
     }
-  }
+
+    @Override
+    protected void doStop()
+            throws Exception {
+        for (Registration r : registrations) {
+            r.cancel();
+        }
+        super.doStop();
+    }
+
+    @Override
+    public void accept(final Event<?> event) {
+        final boolean inOut = event.getReplyTo() != null;
+
+        final Exchange exchange = endpoint.createExchange(inOut ? ExchangePattern.InOut : ExchangePattern.InOnly);
+        Message in = exchange.getIn();
+        ReactorHelper.fillMessage(event, in);
+        try {
+            getAsyncProcessor().process(exchange, new AsyncCallback() {
+                @Override
+                public void done(boolean done) {
+                    if (inOut) {
+                        LOG.debug("Sending reply to: {} with body: {}", event.getReplyTo(), event);
+                        Event<?> response = ReactorHelper.getReactorEvent(exchange);
+                        reactor.notify(event.getReplyTo(), response);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            getExceptionHandler().handleException("Error processing Reactor event: " + event, exchange, e);
+        }
+    }
 
 }

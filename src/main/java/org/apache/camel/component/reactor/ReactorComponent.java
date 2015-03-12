@@ -16,13 +16,19 @@
 package org.apache.camel.component.reactor;
 
 import java.util.Map;
+
+import org.apache.camel.BeanInject;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
 import org.apache.camel.impl.UriEndpointComponent;
+import reactor.core.Environment;
 import reactor.core.Reactor;
 import reactor.core.spec.Reactors;
+import reactor.event.dispatch.Dispatcher;
 
 /**
+ *
+ * A Camel Component for <a href="http://projectreactor.io/">vert.x</a>
  *
  * @author matticala
  * @since 21-nov-2014
@@ -33,9 +39,8 @@ import reactor.core.spec.Reactors;
  */
 public class ReactorComponent extends UriEndpointComponent {
 
+    @BeanInject
     private Reactor reactor;
-
-    private ReactorConfiguration configuration;
 
     public ReactorComponent() {
         this(ReactorEndpoint.class);
@@ -50,56 +55,27 @@ public class ReactorComponent extends UriEndpointComponent {
         this.reactor = reactor;
     }
 
-    public ReactorComponent(ReactorConfiguration configuration) {
+    public ReactorComponent(Environment environment, Dispatcher dispatcher) {
         super(ReactorEndpoint.class);
-        this.configuration = configuration;
+        this.reactor = Reactors.reactor(environment, dispatcher);
     }
 
-    public ReactorComponent(CamelContext context, Class<? extends Endpoint> endpointClass) {
-        super(context, endpointClass);
-    }
-
-    public ReactorComponent(Reactor reactor, ReactorConfiguration configuration, CamelContext context, Class<? extends Endpoint> endpointClass) {
-        super(context, endpointClass);
-        this.reactor = reactor;
-        this.configuration = configuration;
+    public ReactorComponent(Environment environment, String dispatcher) {
+        super(ReactorEndpoint.class);
+        this.reactor = Reactors.reactor(environment, dispatcher);
     }
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters)
             throws Exception {
 
-        ReactorConfiguration config;
-        if (configuration != null) {
-            config = configuration.copy();
-        } else {
-            config = new ReactorConfiguration();
-        }
-        config.validateConfiguration();
-
-        if (reactor == null) {
-            reactor = Reactors.reactor(config.getEnvironment(), config.getDispatcher());
-        }
-
-        ReactorEndpoint endpoint = new ReactorEndpoint(uri, remaining, this);
+        ReactorEndpoint endpoint = new ReactorEndpoint(uri, this, remaining);
         setProperties(endpoint.getEndpointConfiguration(), parameters);
         return endpoint;
     }
 
     public Reactor getReactor() {
         return reactor;
-    }
-
-    public void setReactor(Reactor reactor) {
-        this.reactor = reactor;
-    }
-
-    public ReactorConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    public void setConfiguration(ReactorConfiguration configuration) {
-        this.configuration = configuration;
     }
 
 }

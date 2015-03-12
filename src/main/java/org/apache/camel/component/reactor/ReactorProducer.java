@@ -15,10 +15,22 @@
  */
 package org.apache.camel.component.reactor;
 
+import org.apache.camel.AsyncCallback;
 import org.apache.camel.Exchange;
+import org.apache.camel.InvalidPayloadRuntimeException;
+import org.apache.camel.Message;
+import org.apache.camel.impl.DefaultAsyncProducer;
 import org.apache.camel.impl.DefaultProducer;
+import org.apache.camel.util.ExchangeHelper;
+import org.apache.camel.util.MessageHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.Reactor;
 import reactor.event.Event;
+import reactor.function.Consumer;
+
+import java.util.Map;
+import java.util.Objects;
 
 /**
  *
@@ -28,43 +40,12 @@ import reactor.event.Event;
  *
  * Last change: $$Date$$ Last changed by: $$Author$$
  */
-public class ReactorProducer extends DefaultProducer {
+public class ReactorProducer extends DefaultAsyncProducer {
 
-    private final Reactor reactor;
+    private static final Logger LOG = LoggerFactory.getLogger(ReactorProducer.class);
 
     public ReactorProducer(ReactorEndpoint endpoint) {
         super(endpoint);
-        this.reactor = endpoint.getReactor();
-    }
-
-    @Override
-    public void process(Exchange exchange) throws Exception {
-        Object payload = exchange.getIn().getBody();
-        Event<?> event;
-
-        if (payload instanceof Event) {
-            event = (Event<?>) payload;
-        } else {
-            event = Event.wrap(payload);
-        }
-
-        ReactorEndpoint endpoint = getEndpoint();
-
-        if (endpoint.hasUri()) {
-            reactor.notify(endpoint.getUri(), event);
-        }
-        if (endpoint.hasType()) {
-            reactor.notify(endpoint.getType(), event);
-        }
-        if (endpoint.hasRegex()) {
-            reactor.notify(endpoint.getRegex(), event);
-        }
-
-        boolean noOtherOption = !(endpoint.hasUri() && endpoint.hasType() && endpoint.hasRegex());
-
-        if (endpoint.isObject() || noOtherOption) {
-            reactor.notify(endpoint.getSelector(), event);
-        }
     }
 
     @Override
@@ -72,4 +53,56 @@ public class ReactorProducer extends DefaultProducer {
         return (ReactorEndpoint) super.getEndpoint();
     }
 
+    @Override
+    public boolean process(Exchange exchange, AsyncCallback callback) {
+        Reactor reactor = getEndpoint().getReactor();
+        Object bus = getEndpoint().getSelector();
+        boolean reply = ExchangeHelper.isOutCapable(exchange);
+        Event<?> event = ReactorHelper.getReactorEvent(exchange);
+        if(event != null) {
+            if(reply) {
+                LOG.debug("Sending to: {} the event: {}", bus, event);
+                reactor.sendAndReceive(bus, event, new ReplyHandler(exchange, callback));
+                return false;
+            } else {
+                LOG.debug("Sending to: {} the event: {}", bus, event);
+                reactor.notify(bus, event);
+                callback.done(true);
+                return true;
+            }
+
+        }
+        exchange.setException(new InvalidPayloadRuntimeException(exchange, String.class));
+        callback.done(true);
+        return true;
+    }
+
+    private static final class ReplyHandler implements Consumer<Event<?>> {
+
+        private final Exchange exchange;
+        private final AsyncCallback callback;
+
+        public ReplyHandler(Exchange exchange, AsyncCallback callback) {
+            this.exchange = exchange;
+            this.callback = callback;
+        }
+
+        @Override
+        public void accept(Event<?> event) {
+            try {
+                // preserve headers
+                MessageHelper.copyHeaders(exchange.getIn(), exchange.getOut(), false);
+                Message out = exchange.getOut();
+                Map<String, Object> headers = out.getHeaders();
+                for(String s : headers.keySet()) {
+                    if (s.startsWith("reactor.")) {
+                        headers.remove(s);
+                    }
+                }
+                ReactorHelper.fillMessage(event, out);
+            } finally {
+                callback.done(false);
+            }
+        }
+    }
 }

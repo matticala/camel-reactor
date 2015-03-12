@@ -54,11 +54,10 @@ public class ComponentTest extends CamelTestSupport {
 
             @Override
             public void configure() throws Exception {
-                this.from("vm:input").to("reactor:mybus?uri=/input/test");
+                this.from("vm:input").to("reactor:U(/input/test)");
 
-                this.from("reactor:mybus?matchAll=true").log("###### LOGGER ${body} ######");
-
-                this.from("reactor:mybus?uri=/input/{destination}").to("vm:output");
+                this.from("reactor:U(/input/{destination})").to("reactor:T("+String.class+")");
+                this.from("reactor:T("+String.class+")").to("vm:output");
             }
         });
         return ctx;
@@ -81,9 +80,6 @@ public class ComponentTest extends CamelTestSupport {
         Exchange received = c.receive();
         log.info("***** Received {} from {}", received, e1);
 
-        reactor.notify("/input/myself", received.getIn().getBody(Event.class));
-        received = c.receive();
-        log.info("***** Received again {} from {}", received, e1);
         assertTrue(received != null);
     }
 
