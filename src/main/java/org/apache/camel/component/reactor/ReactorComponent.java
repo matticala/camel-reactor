@@ -28,7 +28,7 @@ import reactor.event.dispatch.Dispatcher;
 
 /**
  *
- * A Camel Component for <a href="http://projectreactor.io/">vert.x</a>
+ * A Camel Component for <a href="http://projectreactor.io/">Reactor</a>
  *
  * @author matticala
  * @since 21-nov-2014
