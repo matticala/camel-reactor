@@ -112,7 +112,8 @@ public class InOutExchangeTest extends CamelTestSupport {
     LOG.info("##### Registration: {}, {}", r, r2);
 
     reactor.notify("/out/activemq", e);
-    latch.await(30, TimeUnit.SECONDS);
+    latch.await();
+//    latch.await(30, TimeUnit.SECONDS);
   }
 
   @Override

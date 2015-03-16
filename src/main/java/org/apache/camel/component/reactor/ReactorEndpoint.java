@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Reactor;
 import reactor.event.Event;
-import reactor.event.selector.Selectors;
 
 /**
  * @author matticala
@@ -35,16 +34,14 @@ import reactor.event.selector.Selectors;
  */
 @ManagedResource(description = "Managed Reactor Endpoint")
 @UriEndpoint(scheme = "reactor", syntax = "reactor:type|uri|regex|object:selector",
-    consumerClass = ReactorConsumer.class, label = "reactor")
-public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStrategyAware {
+  consumerClass = ReactorConsumer.class, label = "reactor") public class ReactorEndpoint
+  extends DefaultEndpoint implements HeaderFilterStrategyAware {
 
   private static final Logger LOG = LoggerFactory.getLogger(ReactorEndpoint.class);
   private ReactorConfiguration configuration;
   private Reactor reactor;
   private SelectorType selectorType;
-  @UriPath
-  @Metadata(required = "true")
-  private Object selectorObject;
+  @UriPath @Metadata(required = "true") private Object selectorObject;
   private HeaderFilterStrategy headerFilterStrategy = new ReactorHeaderFilterStrategy();
   private ReactorBinding binding;
 
@@ -56,8 +53,8 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     this(null, null, selectorType, selectorObject, new ReactorConfiguration());
   }
 
-  public ReactorEndpoint(String uri, ReactorComponent component, SelectorType selectorType, Object selectorObject,
-      ReactorConfiguration configuration) {
+  public ReactorEndpoint(String uri, ReactorComponent component, SelectorType selectorType,
+    Object selectorObject, ReactorConfiguration configuration) {
     super(uri, component);
     this.reactor = component.getReactor();
     this.selectorType = selectorType;
@@ -65,67 +62,70 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     this.configuration = configuration;
   }
 
+  @Override public boolean isSynchronous() {
+    return getConfiguration().isSynchronous();
+  }
+
+  @Override public void setSynchronous(boolean synchronous) {
+    getConfiguration().setSynchronous(synchronous);
+  }
+
   /**
    * Gets the header filter strategy used
-   * 
+   *
    * @return the strategy
    */
-  @Override
-  public HeaderFilterStrategy getHeaderFilterStrategy() {
+  @Override public HeaderFilterStrategy getHeaderFilterStrategy() {
     return headerFilterStrategy;
   }
 
   /**
    * Sets the header filter strategy to use
-   * 
+   *
    * @param strategy the strategy
    */
-  @Override
-  public void setHeaderFilterStrategy(HeaderFilterStrategy strategy) {
+  @Override public void setHeaderFilterStrategy(HeaderFilterStrategy strategy) {
     this.headerFilterStrategy = strategy;
   }
 
   public ReactorConfiguration getConfiguration() {
-    if(configuration == null) {
+    if (configuration == null) {
       configuration = new ReactorConfiguration();
     }
     return configuration;
   }
 
-  @ManagedAttribute
-  public boolean isTransferExchange() {
+  public void setConfiguration(ReactorConfiguration configuration) {
+    this.configuration = configuration;
+  }
+
+  @ManagedAttribute public boolean isTransferExchange() {
     return getConfiguration().isTransferExchange();
   }
 
-  @ManagedAttribute
-  public void setTransferExchange(boolean transferExchange) {
+  @ManagedAttribute public void setTransferExchange(boolean transferExchange) {
     getConfiguration().setTransferExchange(transferExchange);
   }
 
-  @ManagedAttribute
-  public boolean isIncludeAllProperties() {
+  @ManagedAttribute public boolean isIncludeAllProperties() {
     return getConfiguration().isIncludeAllProperties();
   }
 
-  @ManagedAttribute
-  public void setIncludeAllProperties(boolean includeAllProperties) {
+  @ManagedAttribute public void setIncludeAllProperties(boolean includeAllProperties) {
     getConfiguration().setIncludeAllProperties(includeAllProperties);
   }
 
-  @Override
-  public Producer createProducer() throws Exception {
+  @Override public Producer createProducer() throws Exception {
     return new ReactorProducer(this);
   }
 
-  @Override
-  public Exchange createExchange(ExchangePattern pattern) {
+  @Override public Exchange createExchange(ExchangePattern pattern) {
     Exchange exchange = new DefaultExchange(this, pattern);
     exchange.setProperty(Exchange.BINDING, getBinding());
     return exchange;
   }
 
-  @Override
-  public Exchange createExchange() {
+  @Override public Exchange createExchange() {
     return createExchange(getExchangePattern());
   }
 
@@ -135,9 +135,8 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     return exchange;
   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public Consumer createConsumer(Processor processor) throws Exception {
+  @Override @SuppressWarnings("unchecked") public Consumer createConsumer(Processor processor)
+    throws Exception {
     return new ReactorConsumer(this, processor);
   }
 
@@ -145,17 +144,27 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     return reactor;
   }
 
+  public void setReactor(Reactor reactor) {
+    this.reactor = reactor;
+  }
+
   public Object getSelectorObject() {
     return selectorObject;
+  }
+
+  public void setSelectorObject(Object selectorObject) {
+    this.selectorObject = selectorObject;
   }
 
   public SelectorType getSelectorType() {
     return selectorType;
   }
 
-  @ManagedAttribute
-  @Override
-  public boolean isSingleton() {
+  public void setSelectorType(SelectorType selectorType) {
+    this.selectorType = selectorType;
+  }
+
+  @ManagedAttribute @Override public boolean isSingleton() {
     return true;
   }
 
@@ -170,14 +179,12 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     this.binding = binding;
   }
 
-  @Override
-  @ManagedAttribute(description = "Endpoint Uri", mask = true)
+  @Override @ManagedAttribute(description = "Endpoint Uri", mask = true)
   public String getEndpointUri() {
     return super.getEndpointUri();
   }
 
-  @ManagedAttribute(description = "Service State")
-  public String getState() {
+  @ManagedAttribute(description = "Service State") public String getState() {
     ServiceStatus status = this.getStatus();
     if (status == null) {
       status = ServiceStatus.Stopped;
@@ -187,22 +194,6 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
 
   public void setErrorHandler(ErrorHandler errorHandler) {
     getConfiguration().setErrorHandler(errorHandler);
-  }
-
-  public void setConfiguration(ReactorConfiguration configuration) {
-    this.configuration = configuration;
-  }
-
-  public void setReactor(Reactor reactor) {
-    this.reactor = reactor;
-  }
-
-  public void setSelectorType(SelectorType selectorType) {
-    this.selectorType = selectorType;
-  }
-
-  public void setSelectorObject(Object selectorObject) {
-    this.selectorObject = selectorObject;
   }
 
 

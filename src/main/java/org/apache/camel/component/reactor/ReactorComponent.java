@@ -47,7 +47,7 @@ public class ReactorComponent extends HeaderFilterStrategyComponent {
 
   public ReactorComponent(Class<? extends Endpoint> endpointClass) {
     super(endpointClass);
-    this.reactor = Reactors.reactor(new Environment(), Environment.RING_BUFFER);
+    this.reactor = Reactors.reactor(new Environment(), Environment.WORK_QUEUE);
   }
 
   @BeanInject

@@ -102,23 +102,36 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
 
     final Exchange exchange = endpoint.createExchange(event);
     exchange.setPattern(inOut ? ExchangePattern.InOut : ExchangePattern.InOnly);
-//    Message in = exchange.getIn();
-//    ReactorMessageHelper.fillMessage(event, in);
-    try {
-      getAsyncProcessor().process(exchange, new AsyncCallback() {
-        @Override public void done(boolean done) {
-          if (inOut) {
-            Reactor reactor = getEndpoint().getReactor();
-            Event<?> response = getEndpoint().getBinding().createReactorEvent(exchange,
-              exchange.hasOut() ? exchange.getOut() : exchange.getIn());
-            reactor.notify(event.getReplyTo(), response);
-            LOG.debug("Sent reply to: {} with body: {}", event.getReplyTo(), response);
-          }
+    //    Message in = exchange.getIn();
+    //    ReactorMessageHelper.fillMessage(event, in);
+
+    AsyncCallback callback = new AsyncCallback() {
+      @Override public void done(boolean b) {
+        if (inOut) {
+          final Reactor reactor = getEndpoint().getReactor();
+          final Event<?> response = getEndpoint().getBinding()
+            .createReactorEvent(exchange, exchange.hasOut() ? exchange.getOut() : exchange.getIn());
+          reactor.notify(event.getReplyTo(), response);
+          LOG.debug("Sent reply to: {} with body: {}", event.getReplyTo(), response);
         }
-      });
-    } catch (Exception e) {
-      getExceptionHandler()
-        .handleException("Error processing Reactor event: " + event, exchange, e);
+      }
+    };
+
+    if (endpoint.isSynchronous()) {
+      try {
+        getProcessor().process(exchange);
+      } catch (Exception e) {
+        exchange.setException(e);
+      } finally {
+        callback.done(true);
+      }
+    } else {
+      try {
+        getAsyncProcessor().process(exchange, callback);
+      } catch (Exception e) {
+        getExceptionHandler()
+          .handleException("Error processing Reactor event: " + event, exchange, e);
+      }
     }
   }
 }

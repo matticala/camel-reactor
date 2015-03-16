@@ -41,6 +41,11 @@ public class ReactorConfiguration implements Cloneable {
   private boolean includeAllProperties = true;
   @UriParam(defaultValue = "true")
   private boolean alwaysCopyMessage = true;
+  @UriParam(
+    defaultValue = "false",
+    description = "Sets whether synchronous processing should be strictly used, or Camel is allowed to use asynchronous processing (if supported)."
+  )
+  private boolean synchronous = true;
 
   public ErrorHandler getErrorHandler() {
     return errorHandler;
@@ -64,6 +69,14 @@ public class ReactorConfiguration implements Cloneable {
     } catch (CloneNotSupportedException var2) {
       throw new RuntimeCamelException(var2);
     }
+  }
+
+  public boolean isSynchronous() {
+    return synchronous;
+  }
+
+  public void setSynchronous(boolean synchronous) {
+    this.synchronous = synchronous;
   }
 
   public boolean isTransferExchange() {
