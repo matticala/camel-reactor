@@ -1,8 +1,7 @@
 package org.apache.camel.component.reactor;
 
-import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
-import org.apache.camel.NoTypeConversionAvailableException;
+import org.apache.camel.Message;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.impl.DefaultExchangeHolder;
 import org.apache.camel.spi.HeaderFilterStrategy;
@@ -15,10 +14,12 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.camel.component.reactor.ReactorConstants.*;
+
 /**
  * A Strategy used to convert between a Camel {@link Exchange} and {@link ReactorMessage} to and
  * from a Reactor {@link reactor.event.Event}
- * 
+ *
  * @author Matteo Calabrò
  */
 public class ReactorBinding {
@@ -54,14 +55,12 @@ public class ReactorBinding {
         DefaultExchangeHolder.unmarshal(exchange, holder);
         return exchange.getIn().getBody();
       } else {
-        event.getData();
+        return event.getData();
       }
     } catch (Exception e) {
-      throw new RuntimeCamelException(
-          "Failed to extract body due to: " + e + ". Message: " + event, e);
+      throw new RuntimeCamelException("Failed to extract body due to: " + e + ". Message: " + event,
+        e);
     }
-    // Unreachable code.
-    return null;
   }
 
   public Map<? extends String, ?> getHeadersFromEvent(Event<?> event, Exchange exchange) {
@@ -93,25 +92,53 @@ public class ReactorBinding {
     return Event.wrap(cause);
   }
 
-  public Event<?> createReactorEvent(Exchange exchange, Object body, Map<String, Object> headers,
-      CamelContext context) {
+  public Event<?> createReactorEvent(Exchange exchange, Message message) {
+    Event<?> ret = null;
+    if (endpoint != null && endpoint.isTransferExchange()) {
+      Serializable holder = DefaultExchangeHolder.marshal(exchange);
+      ret = Event.wrap(holder);
+    }
+
+    boolean alwaysCopy = endpoint != null && endpoint.getConfiguration().isAlwaysCopyMessage();
+    if (ret == null && message instanceof ReactorMessage
+      && ((ReactorMessage) message).getEvent() != null) {
+      ret = (alwaysCopy) ?
+        ((ReactorMessage) message).getEvent().copy() :
+        ((ReactorMessage) message).getEvent();
+    }
+
+    if (ret == null && message.getBody() != null) {
+      ret = createReactorEvent(exchange, message.getBody(), message.getHeaders());
+    }
+    return ret;
+  }
+
+  public Event<?> createReactorEvent(Exchange exchange, Object body, Map<String, Object> headers) {
     if (endpoint != null && endpoint.isTransferExchange()) {
       Serializable holder = DefaultExchangeHolder.marshal(exchange);
       return Event.wrap(holder);
     }
 
     if (body != null) {
-      try {
-        Serializable payload =
-            context.getTypeConverter().mandatoryConvertTo(Serializable.class, exchange, body);
-        Event<?> event = Event.wrap(payload);
-        if (headers != null && !headers.isEmpty()) {
-          event.getHeaders().setAll(headers);
+      Event<?> event = Event.wrap(body);
+      if (headers != null && !headers.isEmpty()) {
+        for (Map.Entry<String, Object> entry : headers.entrySet()) {
+          String key = entry.getKey();
+          if (key.startsWith(HEADER_PREFIX)) {
+            switch (key) {
+              case KEY:
+                event.setKey(entry.getValue());
+                break;
+              case REPLY_TO:
+                event.setReplyTo(entry.getValue());
+                break;
+              default:
+                event.getHeaders().set(key.substring(HEADER_PREFIX.length()), entry.getValue());
+            }
+          }
         }
-        return event;
-      } catch (NoTypeConversionAvailableException e) {
-        throw new RuntimeCamelException(e);
       }
+      return event;
     }
     return null;
   }
