@@ -19,6 +19,8 @@ import org.apache.activemq.camel.component.ActiveMQComponent;
 import org.apache.activemq.camel.component.ActiveMQConfiguration;
 import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.After;
@@ -83,13 +85,13 @@ public class InOutExchangeTest extends CamelTestSupport {
       public void configure() throws Exception {
 
         this.from("reactor:uri:/out/{destination}").to("activemq:queue:test");
-        this.from("activemq:queue:test").to("reactor:uri:/reply/here");
-        // .process(new Processor() {
-        // @Override
-        // public void process(Exchange exchange) throws Exception {
-        // exchange.getOut().setBody("RESPONSE");
-        // }
-        // });
+        this.from("activemq:queue:test")
+        .process(new Processor() {
+          @Override
+          public void process(Exchange exchange) throws Exception {
+            exchange.getOut().setBody("RESPONSE");
+          }
+        });
       }
     });
     return ctx;
@@ -98,17 +100,16 @@ public class InOutExchangeTest extends CamelTestSupport {
   @Test
   public void testInOutEvent() throws Exception {
     Event<String> e = Event.wrap("REQUEST", "/reply/here");
-
-    Registration<?> r = reactor.on(Selectors.uri("/reply/here"), new Consumer<Event<?>>() {
-      @Override
-      public void accept(Event<?> event) {
-
+    Consumer<Event<String>> consumer = new Consumer<Event<String>>() {
+      @Override public void accept(Event<String> event) {
         LOG.info("##### Received " + event);
         latch.countDown();
       }
-    });
-    // r.cancelAfterUse();
-    LOG.info("##### Re{}", r);
+    };
+    Registration<?> r = reactor.on(Selectors.uri((String) e.getReplyTo()), consumer);
+    Registration<?> r2 = reactor.on(Selectors.object(e.getReplyTo()), consumer);
+    r.cancelAfterUse();
+    LOG.info("##### Registration: {}, {}", r, r2);
 
     reactor.notify("/out/activemq", e);
     latch.await(30, TimeUnit.SECONDS);

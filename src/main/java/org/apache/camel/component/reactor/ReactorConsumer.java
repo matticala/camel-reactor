@@ -121,7 +121,4 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
         .handleException("Error processing Reactor event: " + event, exchange, e);
     }
   }
-
-
-
 }
