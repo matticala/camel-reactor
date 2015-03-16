@@ -19,48 +19,27 @@ import reactor.event.Event;
 
 import java.util.Map;
 
+import static org.apache.camel.component.reactor.ReactorConstants.HEADER_PREFIX;
+import static org.apache.camel.component.reactor.ReactorConstants.KEY;
+import static org.apache.camel.component.reactor.ReactorConstants.REPLY_TO;
+
 /**
  * @author Matteo
  * @version $$Revision$$ Created: 12/03/2015 10:15 Last change: $$Date$$ Last changed by: $$Author$$
  */
 public abstract class ReactorMessageHelper {
 
-  public static Event<?> getReactorEvent(Exchange exchange) {
-    Message msg = exchange.hasOut() ? exchange.getOut() : exchange.getIn();
-    if(msg instanceof ReactorMessage && ((ReactorMessage) msg).getEvent() != null) {
-      return ((ReactorMessage) msg).getEvent();
-    }
-    Object body = msg.getBody();
-    Event<?> event = Event.wrap(body);
-    for (Map.Entry<String, Object> entry : msg.getHeaders().entrySet()) {
-      String key = entry.getKey();
-      if (key.startsWith("REACTOR_")) {
-        switch (key) {
-          case "REACTOR_key":
-            event.setKey(entry.getValue());
-            break;
-          case "REACTOR_replyTo":
-            event.setReplyTo(entry.getValue());
-            break;
-          default:
-            event.getHeaders().set(key.substring("REACTOR_".length()), entry.getValue());
-        }
-      }
-    }
-    return event;
-  }
-
   public static void fillMessage(Event<?> src, Message dst) {
     dst.setBody(src.getData());
     dst.setMessageId(src.getId().toString());
     for (Map.Entry<String, Object> entry : src.getHeaders().asMap().entrySet()) {
-      dst.setHeader("REACTOR_"+entry.getKey(), entry.getValue());
+      dst.setHeader(HEADER_PREFIX+entry.getKey(), entry.getValue());
     }
     if (src.getKey() != null) {
-      dst.setHeader("REACTOR_key", src.getKey());
+      dst.setHeader(KEY, src.getKey());
     }
     if (src.getReplyTo() != null) {
-      dst.setHeader("REACTOR_replyTo", src.getReplyTo());
+      dst.setHeader(REPLY_TO, src.getReplyTo());
     }
   }
 }

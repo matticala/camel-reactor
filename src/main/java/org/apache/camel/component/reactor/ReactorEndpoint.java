@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Reactor;
 import reactor.event.Event;
+import reactor.event.selector.Selectors;
 
 /**
  * @author matticala
@@ -38,21 +39,29 @@ import reactor.event.Event;
 public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStrategyAware {
 
   private static final Logger LOG = LoggerFactory.getLogger(ReactorEndpoint.class);
-  private final ReactorConfiguration configuration;
-  private final Reactor reactor;
-  private final TYPE type;
+  private ReactorConfiguration configuration;
+  private Reactor reactor;
+  private SelectorType selectorType;
   @UriPath
   @Metadata(required = "true")
-  private final Object selector;
+  private Object selectorObject;
   private HeaderFilterStrategy headerFilterStrategy = new ReactorHeaderFilterStrategy();
   private ReactorBinding binding;
 
-  public ReactorEndpoint(String uri, ReactorComponent component, TYPE type, Object selector,
-      ReactorConfiguration configuration) throws Exception {
+  public ReactorEndpoint() {
+    super();
+  }
+
+  public ReactorEndpoint(SelectorType selectorType, Object selectorObject) {
+    this(null, null, selectorType, selectorObject, new ReactorConfiguration());
+  }
+
+  public ReactorEndpoint(String uri, ReactorComponent component, SelectorType selectorType, Object selectorObject,
+      ReactorConfiguration configuration) {
     super(uri, component);
     this.reactor = component.getReactor();
-    this.type = type;
-    this.selector = selector;
+    this.selectorType = selectorType;
+    this.selectorObject = selectorObject;
     this.configuration = configuration;
   }
 
@@ -77,7 +86,10 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
   }
 
   public ReactorConfiguration getConfiguration() {
-    return null;
+    if(configuration == null) {
+      configuration = new ReactorConfiguration();
+    }
+    return configuration;
   }
 
   @ManagedAttribute
@@ -133,12 +145,12 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     return reactor;
   }
 
-  public Object getSelector() {
-    return selector;
+  public Object getSelectorObject() {
+    return selectorObject;
   }
 
-  public TYPE getType() {
-    return type;
+  public SelectorType getSelectorType() {
+    return selectorType;
   }
 
   @ManagedAttribute
@@ -177,8 +189,20 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     getConfiguration().setErrorHandler(errorHandler);
   }
 
-  static enum TYPE {
-    CLASS, URI, OBJECT, REGEX
+  public void setConfiguration(ReactorConfiguration configuration) {
+    this.configuration = configuration;
+  }
+
+  public void setReactor(Reactor reactor) {
+    this.reactor = reactor;
+  }
+
+  public void setSelectorType(SelectorType selectorType) {
+    this.selectorType = selectorType;
+  }
+
+  public void setSelectorObject(Object selectorObject) {
+    this.selectorObject = selectorObject;
   }
 
 

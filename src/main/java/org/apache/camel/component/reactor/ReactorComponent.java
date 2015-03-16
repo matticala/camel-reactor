@@ -74,23 +74,23 @@ public class ReactorComponent extends HeaderFilterStrategyComponent {
     HeaderFilterStrategy headerFilterStrategy =
         resolveAndRemoveReferenceParameter(parameters, "headerFilterStrategy",
             HeaderFilterStrategy.class);
-    ReactorEndpoint.TYPE type;
+    SelectorType type;
     Object selector;
     if (remaining.startsWith(URI_PREFIX)) {
-      type = ReactorEndpoint.TYPE.URI;
+      type = SelectorType.uri;
       selector = remaining.substring(URI_PREFIX.length());
     } else if (remaining.startsWith(TYPE_PREFIX)) {
-      type = ReactorEndpoint.TYPE.CLASS;
+      type = SelectorType.type;
       remaining = remaining.substring(TYPE_PREFIX.length());
       if (remaining.startsWith("class")) {
         remaining = remaining.substring("class".length() + 1);
       }
       selector = Class.forName(remaining);
     } else if (remaining.startsWith(REGEX_PREFIX)) {
-      type = ReactorEndpoint.TYPE.REGEX;
+      type = SelectorType.regex;
       selector = remaining.substring(REGEX_PREFIX.length());
     } else {
-      type = ReactorEndpoint.TYPE.OBJECT;
+      type = SelectorType.object;
       selector = remaining;
     }
 

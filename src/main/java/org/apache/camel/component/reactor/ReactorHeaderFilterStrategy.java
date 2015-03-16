@@ -26,8 +26,8 @@ public class ReactorHeaderFilterStrategy extends DefaultHeaderFilterStrategy {
   }
 
   protected void init() {
-    getOutFilter().add("key");
-    getOutFilter().add("replyTo");
+    getOutFilter().add(ReactorConstants.KEY);
+    getOutFilter().add(ReactorConstants.REPLY_TO);
 
     setLowerCase(true);
 

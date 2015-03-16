@@ -22,8 +22,10 @@ import reactor.event.Event;
 import reactor.event.registry.Registration;
 import reactor.event.selector.Selectors;
 import reactor.function.Consumer;
+import reactor.function.Predicate;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * @author matticala
@@ -46,54 +48,69 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
     this.endpoint = endpoint;
   }
 
-  @Override
-  public ReactorEndpoint getEndpoint() {
+  @Override public ReactorEndpoint getEndpoint() {
     return (ReactorEndpoint) super.getEndpoint();
   }
 
-  @Override
-  protected void doStart() throws Exception {
+  @Override @SuppressWarnings("unchecked") protected void doStart() throws Exception {
     super.doStart();
 
     Reactor reactor = getEndpoint().getReactor();
-    switch (endpoint.getType()) {
-      case CLASS:
-        registrations.add(reactor.on(Selectors.type((Class<?>) endpoint.getSelector()), this));
+    switch (endpoint.getSelectorType()) {
+      case type:
+        if (!(endpoint.getSelectorObject() instanceof Class)) {
+          throw new RuntimeCamelException("Endpoint selector object is not a " + Class.class);
+        }
+        registrations
+          .add(reactor.on(Selectors.type((Class<?>) endpoint.getSelectorObject()), this));
         break;
-      case URI:
-        registrations.add(reactor.on(Selectors.uri((String) endpoint.getSelector()), this));
+      case uri:
+        registrations.add(reactor.on(Selectors.uri((String) endpoint.getSelectorObject()), this));
         break;
-      case REGEX:
-        registrations.add(reactor.on(Selectors.regex((String) endpoint.getSelector()), this));
+      case regex:
+        registrations.add(reactor.on(Selectors.regex((String) endpoint.getSelectorObject()), this));
+        break;
+      case predicate:
+        if (!(endpoint.getSelectorObject() instanceof reactor.function.Predicate)) {
+          throw new RuntimeCamelException("Endpoint selector object is not a " + Predicate.class);
+        }
+        registrations.add(reactor.on(
+          Selectors.predicate((reactor.function.Predicate<Object>) endpoint.getSelectorObject()),
+          this));
+        break;
+      case set:
+        if (!(endpoint.getSelectorObject() instanceof Set)) {
+          throw new RuntimeCamelException("Endpoint selector object is not a " + Set.class);
+        }
+        registrations
+          .add(reactor.on(Selectors.setMembership((Set) endpoint.getSelectorObject()), this));
         break;
       default:
-        registrations.add(reactor.on(Selectors.object(endpoint.getSelector()), this));
+        registrations.add(reactor.on(Selectors.object(endpoint.getSelectorObject()), this));
     }
   }
 
-  @Override
-  protected void doStop() throws Exception {
+  @Override protected void doStop() throws Exception {
     for (Registration r : registrations) {
       r.cancel();
     }
     super.doStop();
   }
 
-  @Override
-  public void accept(final Event<?> event) {
+  @Override public void accept(final Event<?> event) {
     final boolean inOut = event.getReplyTo() != null;
 
     final Exchange exchange = endpoint.createExchange(event);
     exchange.setPattern(inOut ? ExchangePattern.InOut : ExchangePattern.InOnly);
-    Message in = exchange.getIn();
-    ReactorMessageHelper.fillMessage(event, in);
+//    Message in = exchange.getIn();
+//    ReactorMessageHelper.fillMessage(event, in);
     try {
       getAsyncProcessor().process(exchange, new AsyncCallback() {
-        @Override
-        public void done(boolean done) {
+        @Override public void done(boolean done) {
           if (inOut) {
             Reactor reactor = getEndpoint().getReactor();
-            Event<?> response = ReactorMessageHelper.getReactorEvent(exchange);
+            Event<?> response = getEndpoint().getBinding().createReactorEvent(exchange,
+              exchange.hasOut() ? exchange.getOut() : exchange.getIn());
             reactor.notify(event.getReplyTo(), response);
             LOG.debug("Sent reply to: {} with body: {}", event.getReplyTo(), response);
           }
@@ -101,7 +118,7 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
       });
     } catch (Exception e) {
       getExceptionHandler()
-          .handleException("Error processing Reactor event: " + event, exchange, e);
+        .handleException("Error processing Reactor event: " + event, exchange, e);
     }
   }
 
