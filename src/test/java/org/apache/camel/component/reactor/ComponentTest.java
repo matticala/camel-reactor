@@ -25,12 +25,11 @@ import reactor.core.Reactor;
 import reactor.core.spec.Reactors;
 
 /**
- * 
  * @author CalabroM
- * @since 26-nov-2014
  * @version $$Revision$$
- * 
+ *          <p/>
  *          Last change: $$Date$$ Last changed by: $$Author$$
+ * @since 26-nov-2014
  */
 @RunWith(JUnit4.class)
 public class ComponentTest extends CamelTestSupport {

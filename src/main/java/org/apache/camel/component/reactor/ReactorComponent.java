@@ -24,19 +24,22 @@ import reactor.event.dispatch.Dispatcher;
 
 import java.util.Map;
 
+import static org.apache.camel.component.reactor.ReactorConfiguration.*;
+
 /**
- * 
  * A Camel Component for <a href="http://projectreactor.io/">Reactor</a>
  * 
  * @author matticala
- * @since 21-nov-2014
  * @version $$Revision$$
- *          <p>
+ *          <p/>
  *          Last change: $$Date$$ Last changed by: $$Author$$
+ * @since 21-nov-2014
  */
 public class ReactorComponent extends HeaderFilterStrategyComponent {
 
   private final Reactor reactor;
+
+  private ReactorConfiguration configuration;
 
   public ReactorComponent() {
     this(ReactorEndpoint.class);
@@ -71,7 +74,29 @@ public class ReactorComponent extends HeaderFilterStrategyComponent {
     HeaderFilterStrategy headerFilterStrategy =
         resolveAndRemoveReferenceParameter(parameters, "headerFilterStrategy",
             HeaderFilterStrategy.class);
-    ReactorEndpoint endpoint = new ReactorEndpoint(uri, this, remaining);
+    ReactorEndpoint.TYPE type;
+    Object selector;
+    if (remaining.startsWith(URI_PREFIX)) {
+      type = ReactorEndpoint.TYPE.URI;
+      selector = remaining.substring(URI_PREFIX.length());
+    } else if (remaining.startsWith(TYPE_PREFIX)) {
+      type = ReactorEndpoint.TYPE.CLASS;
+      remaining = remaining.substring(TYPE_PREFIX.length());
+      if (remaining.startsWith("class")) {
+        remaining = remaining.substring("class".length() + 1);
+      }
+      selector = Class.forName(remaining);
+    } else if (remaining.startsWith(REGEX_PREFIX)) {
+      type = ReactorEndpoint.TYPE.REGEX;
+      selector = remaining.substring(REGEX_PREFIX.length());
+    } else {
+      type = ReactorEndpoint.TYPE.OBJECT;
+      selector = remaining;
+    }
+
+    ReactorConfiguration conf = getConfiguration().copy();
+
+    ReactorEndpoint endpoint = new ReactorEndpoint(uri, this, type, selector, conf);
     setProperties(endpoint.getEndpointConfiguration(), parameters);
     return endpoint;
   }
@@ -80,4 +105,14 @@ public class ReactorComponent extends HeaderFilterStrategyComponent {
     return reactor;
   }
 
+  public ReactorConfiguration getConfiguration() {
+    if (configuration == null) {
+      configuration = new ReactorConfiguration();
+    }
+    return configuration;
+  }
+
+  public void setConfiguration(ReactorConfiguration configuration) {
+    this.configuration = configuration;
+  }
 }

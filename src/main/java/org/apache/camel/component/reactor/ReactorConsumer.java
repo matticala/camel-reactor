@@ -83,17 +83,17 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
   public void accept(final Event<?> event) {
     final boolean inOut = event.getReplyTo() != null;
 
-    final Exchange exchange =
-        endpoint.createExchange(inOut ? ExchangePattern.InOut : ExchangePattern.InOnly);
+    final Exchange exchange = endpoint.createExchange(event);
+    exchange.setPattern(inOut ? ExchangePattern.InOut : ExchangePattern.InOnly);
     Message in = exchange.getIn();
-    ReactorHelper.fillMessage(event, in);
+    ReactorMessageHelper.fillMessage(event, in);
     try {
       getAsyncProcessor().process(exchange, new AsyncCallback() {
         @Override
         public void done(boolean done) {
           if (inOut) {
             Reactor reactor = getEndpoint().getReactor();
-            Event<?> response = ReactorHelper.getReactorEvent(exchange);
+            Event<?> response = ReactorMessageHelper.getReactorEvent(exchange);
             reactor.notify(event.getReplyTo(), response);
             LOG.debug("Sent reply to: {} with body: {}", event.getReplyTo(), response);
           }
@@ -104,5 +104,7 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
           .handleException("Error processing Reactor event: " + event, exchange, e);
     }
   }
+
+
 
 }

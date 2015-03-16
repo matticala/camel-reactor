@@ -13,19 +13,17 @@
  */
 package org.apache.camel.component.reactor;
 
-import org.apache.camel.Consumer;
-import org.apache.camel.Processor;
-import org.apache.camel.Producer;
+import org.apache.camel.*;
+import org.apache.camel.api.management.ManagedAttribute;
 import org.apache.camel.api.management.ManagedResource;
 import org.apache.camel.impl.DefaultEndpoint;
+import org.apache.camel.impl.DefaultExchange;
+import org.apache.camel.processor.ErrorHandler;
 import org.apache.camel.spi.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Reactor;
-
-import java.net.URISyntaxException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import reactor.event.Event;
 
 /**
  * @author matticala
@@ -40,8 +38,23 @@ import java.util.regex.Pattern;
 public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStrategyAware {
 
   private static final Logger LOG = LoggerFactory.getLogger(ReactorEndpoint.class);
-
+  private final ReactorConfiguration configuration;
+  private final Reactor reactor;
+  private final TYPE type;
+  @UriPath
+  @Metadata(required = "true")
+  private final Object selector;
   private HeaderFilterStrategy headerFilterStrategy = new ReactorHeaderFilterStrategy();
+  private ReactorBinding binding;
+
+  public ReactorEndpoint(String uri, ReactorComponent component, TYPE type, Object selector,
+      ReactorConfiguration configuration) throws Exception {
+    super(uri, component);
+    this.reactor = component.getReactor();
+    this.type = type;
+    this.selector = selector;
+    this.configuration = configuration;
+  }
 
   /**
    * Gets the header filter strategy used
@@ -63,58 +76,51 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     this.headerFilterStrategy = strategy;
   }
 
-  static enum TYPE {
-    CLASS, URI, OBJECT, REGEX
+  public ReactorConfiguration getConfiguration() {
+    return null;
   }
 
-  private final Reactor reactor;
+  @ManagedAttribute
+  public boolean isTransferExchange() {
+    return getConfiguration().isTransferExchange();
+  }
 
-  @UriPath
-  @Metadata(required = "true")
-  private final Object selector;
+  @ManagedAttribute
+  public void setTransferExchange(boolean transferExchange) {
+    getConfiguration().setTransferExchange(transferExchange);
+  }
 
-  private TYPE type;
+  @ManagedAttribute
+  public boolean isIncludeAllProperties() {
+    return getConfiguration().isIncludeAllProperties();
+  }
 
-  public ReactorEndpoint(String uri, ReactorComponent component, String selector) throws Exception {
-    super(uri, component);
-    this.reactor = component.getReactor();
-    Pattern p = Pattern.compile("(uri|class|type|regex|object):(.+)");
-    Matcher m = p.matcher(selector);
-    if (m.matches()) {
-      String prefix = m.group(1);
-      String object = m.group(2);
-      switch (prefix) {
-        case "class":
-        case "type":
-          this.type = TYPE.CLASS;
-          if (object.startsWith("class ")) {
-            object = object.substring("class ".length());
-          }
-          this.selector = Class.forName(object);
-          break;
-        case "uri":
-          this.type = TYPE.URI;
-          this.selector = object;
-          break;
-        case "regex":
-          this.type = TYPE.REGEX;
-          this.selector = object;
-          break;
-        case "object":
-          this.type = TYPE.OBJECT;
-          this.selector = object;
-          break;
-        default:
-          throw new URISyntaxException(uri, selector);
-      }
-    } else {
-      throw new URISyntaxException(uri, selector);
-    }
+  @ManagedAttribute
+  public void setIncludeAllProperties(boolean includeAllProperties) {
+    getConfiguration().setIncludeAllProperties(includeAllProperties);
   }
 
   @Override
   public Producer createProducer() throws Exception {
     return new ReactorProducer(this);
+  }
+
+  @Override
+  public Exchange createExchange(ExchangePattern pattern) {
+    Exchange exchange = new DefaultExchange(this, pattern);
+    exchange.setProperty(Exchange.BINDING, getBinding());
+    return exchange;
+  }
+
+  @Override
+  public Exchange createExchange() {
+    return createExchange(getExchangePattern());
+  }
+
+  public Exchange createExchange(Event<?> event) {
+    Exchange exchange = createExchange(getExchangePattern());
+    exchange.setIn(new ReactorMessage(event, getBinding()));
+    return exchange;
   }
 
   @Override
@@ -135,16 +141,45 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
     return type;
   }
 
-  public void setType(TYPE type) {
-    this.type = type;
-  }
-
-  public void setType(String type) {
-    this.type = TYPE.valueOf(type);
-  }
-
+  @ManagedAttribute
   @Override
   public boolean isSingleton() {
     return true;
   }
+
+  public ReactorBinding getBinding() {
+    if (binding == null) {
+      binding = new ReactorBinding(this);
+    }
+    return binding;
+  }
+
+  public void setBinding(ReactorBinding binding) {
+    this.binding = binding;
+  }
+
+  @Override
+  @ManagedAttribute(description = "Endpoint Uri", mask = true)
+  public String getEndpointUri() {
+    return super.getEndpointUri();
+  }
+
+  @ManagedAttribute(description = "Service State")
+  public String getState() {
+    ServiceStatus status = this.getStatus();
+    if (status == null) {
+      status = ServiceStatus.Stopped;
+    }
+    return status.name();
+  }
+
+  public void setErrorHandler(ErrorHandler errorHandler) {
+    getConfiguration().setErrorHandler(errorHandler);
+  }
+
+  static enum TYPE {
+    CLASS, URI, OBJECT, REGEX
+  }
+
+
 }

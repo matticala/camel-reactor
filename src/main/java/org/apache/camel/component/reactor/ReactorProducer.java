@@ -27,14 +27,14 @@ import reactor.event.Event;
 import reactor.function.Consumer;
 
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
- * 
  * @author matticala
- * @since 21-nov-2014
  * @version $$Revision$$
- * 
+ *          <p/>
  *          Last change: $$Date$$ Last changed by: $$Author$$
+ * @since 21-nov-2014
  */
 public class ReactorProducer extends DefaultAsyncProducer {
 
@@ -51,10 +51,18 @@ public class ReactorProducer extends DefaultAsyncProducer {
 
   @Override
   public boolean process(Exchange exchange, AsyncCallback callback) {
+    if (!isRunAllowed()) {
+      if (exchange.getException() == null) {
+        exchange.setException(new RejectedExecutionException());
+      }
+      // we cannot process so invoke callback
+      callback.done(true);
+      return true;
+    }
     Reactor reactor = getEndpoint().getReactor();
     Object key = getEndpoint().getSelector();
     boolean reply = ExchangeHelper.isOutCapable(exchange);
-    Event<?> event = ReactorHelper.getReactorEvent(exchange);
+    Event<?> event = ReactorMessageHelper.getReactorEvent(exchange);
     if (event != null) {
       if (reply) {
         LOG.debug("Sending to: {} the event: {}", key, event);
@@ -95,7 +103,7 @@ public class ReactorProducer extends DefaultAsyncProducer {
             headers.remove(s);
           }
         }
-        ReactorHelper.fillMessage(event, out);
+        ReactorMessageHelper.fillMessage(event, out);
       } finally {
         callback.done(false);
       }

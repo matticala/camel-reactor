@@ -23,24 +23,27 @@ import java.util.Map;
  * @author Matteo
  * @version $$Revision$$ Created: 12/03/2015 10:15 Last change: $$Date$$ Last changed by: $$Author$$
  */
-public abstract class ReactorHelper {
+public abstract class ReactorMessageHelper {
 
   public static Event<?> getReactorEvent(Exchange exchange) {
     Message msg = exchange.hasOut() ? exchange.getOut() : exchange.getIn();
+    if(msg instanceof ReactorMessage && ((ReactorMessage) msg).getEvent() != null) {
+      return ((ReactorMessage) msg).getEvent();
+    }
     Object body = msg.getBody();
     Event<?> event = Event.wrap(body);
     for (Map.Entry<String, Object> entry : msg.getHeaders().entrySet()) {
       String key = entry.getKey();
-      if (key.startsWith("reactor.")) {
+      if (key.startsWith("REACTOR_")) {
         switch (key) {
-          case "reactor.key":
+          case "REACTOR_key":
             event.setKey(entry.getValue());
             break;
-          case "reactor.replyTo":
+          case "REACTOR_replyTo":
             event.setReplyTo(entry.getValue());
             break;
           default:
-            event.getHeaders().set(key.substring("reactor.".length()), entry.getValue());
+            event.getHeaders().set(key.substring("REACTOR_".length()), entry.getValue());
         }
       }
     }
@@ -51,13 +54,13 @@ public abstract class ReactorHelper {
     dst.setBody(src.getData());
     dst.setMessageId(src.getId().toString());
     for (Map.Entry<String, Object> entry : src.getHeaders().asMap().entrySet()) {
-      dst.setHeader("reactor." + entry.getKey(), entry.getValue());
+      dst.setHeader("REACTOR_"+entry.getKey(), entry.getValue());
     }
     if (src.getKey() != null) {
-      dst.setHeader("reactor.key", src.getKey());
+      dst.setHeader("REACTOR_key", src.getKey());
     }
     if (src.getReplyTo() != null) {
-      dst.setHeader("reactor.replyTo", src.getReplyTo());
+      dst.setHeader("REACTOR_replyTo", src.getReplyTo());
     }
   }
 }
