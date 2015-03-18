@@ -1,0 +1,14 @@
+*.iml
+.idea
+target
+*.iml
+*.ipr
+*.iws
+.idea
+.DS_Store
+.classpath
+.project
+.settings
+.checkstyle
+*.log
+dependency-reduced-pom.xml
