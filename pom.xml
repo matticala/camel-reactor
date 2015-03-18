@@ -47,8 +47,8 @@
 
     <distributionManagement>
         <repository>
-            <id>release</id>
-            <url>https://github.com/matticala/camel-reactor/mvn-repo</url>
+            <id>bintray</id>
+            <url>https://api.bintray.com/maven/matticala/camel-reactor/</url>
         </repository>
     </distributionManagement>
 
