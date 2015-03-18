@@ -14,10 +14,6 @@
 
 package org.apache.camel.component.reactor;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.camel.component.ActiveMQComponent;
-import org.apache.activemq.camel.component.ActiveMQConfiguration;
-import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -58,35 +54,17 @@ public class InOutExchangeTest extends CamelTestSupport {
 
   private final UUID uuid = UUID.randomUUID();
 
-  private ActiveMQComponent setupBroker() {
-    final ActiveMQConfiguration configuration = new ActiveMQConfiguration();
-    final ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
-    connectionFactory.setBrokerURL("vm:(broker:(" + BROKER + ")?persistent=false)?marshal=false");
-    final PooledConnectionFactory pooledConnectionFactory = new PooledConnectionFactory();
-    pooledConnectionFactory.setConnectionFactory(connectionFactory);
-    pooledConnectionFactory.setMaxConnections(10);
-    pooledConnectionFactory.setMaximumActiveSessionPerConnection(500);
-    pooledConnectionFactory.start();
-    configuration.setConnectionFactory(connectionFactory);
-    configuration.setUsePooledConnection(true);
-    configuration.setConcurrentConsumers(12);
-    configuration.setTransacted(false);
-    return new ActiveMQComponent(configuration);
-  }
-
   @Override
   protected CamelContext createCamelContext() throws Exception {
     CamelContext ctx = super.createCamelContext();
     ctx.addComponent("reactor", new ReactorComponent(reactor));
-    ctx.addComponent("activemq", setupBroker());
     ctx.addRoutes(new RouteBuilder() {
 
       @Override
       public void configure() throws Exception {
 
-        this.from("reactor:uri:/out/{destination}").to("activemq:queue:test");
-        this.from("activemq:queue:test")
-        .process(new Processor() {
+        this.from("reactor:uri:/out/{destination}").to("direct:test");
+        this.from("direct:test").process(new Processor() {
           @Override
           public void process(Exchange exchange) throws Exception {
             exchange.getOut().setBody("RESPONSE");
@@ -101,7 +79,8 @@ public class InOutExchangeTest extends CamelTestSupport {
   public void testInOutEvent() throws Exception {
     Event<String> e = Event.wrap("REQUEST", "/reply/here");
     Consumer<Event<String>> consumer = new Consumer<Event<String>>() {
-      @Override public void accept(Event<String> event) {
+      @Override
+      public void accept(Event<String> event) {
         LOG.info("##### Received " + event);
         latch.countDown();
       }
@@ -112,8 +91,8 @@ public class InOutExchangeTest extends CamelTestSupport {
     LOG.info("##### Registration: {}, {}", r, r2);
 
     reactor.notify("/out/activemq", e);
-    latch.await();
-//    latch.await(30, TimeUnit.SECONDS);
+    // latch.await();
+    latch.await(30, TimeUnit.SECONDS);
   }
 
   @Override

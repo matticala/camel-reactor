@@ -48,11 +48,14 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
     this.endpoint = endpoint;
   }
 
-  @Override public ReactorEndpoint getEndpoint() {
+  @Override
+  public ReactorEndpoint getEndpoint() {
     return (ReactorEndpoint) super.getEndpoint();
   }
 
-  @Override @SuppressWarnings("unchecked") protected void doStart() throws Exception {
+  @Override
+  @SuppressWarnings("unchecked")
+  protected void doStart() throws Exception {
     super.doStart();
 
     Reactor reactor = getEndpoint().getReactor();
@@ -62,7 +65,7 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
           throw new RuntimeCamelException("Endpoint selector object is not a " + Class.class);
         }
         registrations
-          .add(reactor.on(Selectors.type((Class<?>) endpoint.getSelectorObject()), this));
+            .add(reactor.on(Selectors.type((Class<?>) endpoint.getSelectorObject()), this));
         break;
       case uri:
         registrations.add(reactor.on(Selectors.uri((String) endpoint.getSelectorObject()), this));
@@ -75,42 +78,46 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
           throw new RuntimeCamelException("Endpoint selector object is not a " + Predicate.class);
         }
         registrations.add(reactor.on(
-          Selectors.predicate((reactor.function.Predicate<Object>) endpoint.getSelectorObject()),
-          this));
+            Selectors.predicate((reactor.function.Predicate<Object>) endpoint.getSelectorObject()),
+            this));
         break;
       case set:
         if (!(endpoint.getSelectorObject() instanceof Set)) {
           throw new RuntimeCamelException("Endpoint selector object is not a " + Set.class);
         }
-        registrations
-          .add(reactor.on(Selectors.setMembership((Set) endpoint.getSelectorObject()), this));
+        registrations.add(reactor.on(Selectors.setMembership((Set) endpoint.getSelectorObject()),
+            this));
         break;
       default:
         registrations.add(reactor.on(Selectors.object(endpoint.getSelectorObject()), this));
     }
   }
 
-  @Override protected void doStop() throws Exception {
+  @Override
+  protected void doStop() throws Exception {
     for (Registration r : registrations) {
       r.cancel();
     }
     super.doStop();
   }
 
-  @Override public void accept(final Event<?> event) {
+  @Override
+  public void accept(final Event<?> event) {
     final boolean inOut = event.getReplyTo() != null;
 
     final Exchange exchange = endpoint.createExchange(event);
     exchange.setPattern(inOut ? ExchangePattern.InOut : ExchangePattern.InOnly);
-    //    Message in = exchange.getIn();
-    //    ReactorMessageHelper.fillMessage(event, in);
+    // Message in = exchange.getIn();
+    // ReactorMessageHelper.fillMessage(event, in);
 
     AsyncCallback callback = new AsyncCallback() {
-      @Override public void done(boolean b) {
+      @Override
+      public void done(boolean b) {
         if (inOut) {
           final Reactor reactor = getEndpoint().getReactor();
-          final Event<?> response = getEndpoint().getBinding()
-            .createReactorEvent(exchange, exchange.hasOut() ? exchange.getOut() : exchange.getIn());
+          final Event<?> response =
+              getEndpoint().getBinding().createReactorEvent(exchange,
+                  exchange.hasOut() ? exchange.getOut() : exchange.getIn());
           reactor.notify(event.getReplyTo(), response);
           LOG.debug("Sent reply to: {} with body: {}", event.getReplyTo(), response);
         }
@@ -129,8 +136,8 @@ public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?
       try {
         getAsyncProcessor().process(exchange, callback);
       } catch (Exception e) {
-        getExceptionHandler()
-          .handleException("Error processing Reactor event: " + event, exchange, e);
+        getExceptionHandler().handleException("Error processing Reactor event: " + event, exchange,
+            e);
       }
     }
   }

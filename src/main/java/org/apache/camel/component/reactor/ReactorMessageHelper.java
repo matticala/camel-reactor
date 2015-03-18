@@ -33,7 +33,7 @@ public abstract class ReactorMessageHelper {
     dst.setBody(src.getData());
     dst.setMessageId(src.getId().toString());
     for (Map.Entry<String, Object> entry : src.getHeaders().asMap().entrySet()) {
-      dst.setHeader(HEADER_PREFIX+entry.getKey(), entry.getValue());
+      dst.setHeader(HEADER_PREFIX + entry.getKey(), entry.getValue());
     }
     if (src.getKey() != null) {
       dst.setHeader(KEY, src.getKey());

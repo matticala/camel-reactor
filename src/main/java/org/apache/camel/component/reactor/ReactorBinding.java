@@ -19,7 +19,7 @@ import static org.apache.camel.component.reactor.ReactorConstants.*;
 /**
  * A Strategy used to convert between a Camel {@link Exchange} and {@link ReactorMessage} to and
  * from a Reactor {@link reactor.event.Event}
- *
+ * 
  * @author Matteo Calabrò
  */
 public class ReactorBinding {
@@ -58,8 +58,8 @@ public class ReactorBinding {
         return event.getData();
       }
     } catch (Exception e) {
-      throw new RuntimeCamelException("Failed to extract body due to: " + e + ". Message: " + event,
-        e);
+      throw new RuntimeCamelException(
+          "Failed to extract body due to: " + e + ". Message: " + event, e);
     }
   }
 
@@ -101,10 +101,10 @@ public class ReactorBinding {
 
     boolean alwaysCopy = endpoint != null && endpoint.getConfiguration().isAlwaysCopyMessage();
     if (ret == null && message instanceof ReactorMessage
-      && ((ReactorMessage) message).getEvent() != null) {
-      ret = (alwaysCopy) ?
-        ((ReactorMessage) message).getEvent().copy() :
-        ((ReactorMessage) message).getEvent();
+        && ((ReactorMessage) message).getEvent() != null) {
+      ret =
+          (alwaysCopy) ? ((ReactorMessage) message).getEvent().copy() : ((ReactorMessage) message)
+              .getEvent();
     }
 
     if (ret == null && message.getBody() != null) {

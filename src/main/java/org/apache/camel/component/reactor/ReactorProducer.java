@@ -62,8 +62,10 @@ public class ReactorProducer extends DefaultAsyncProducer {
     Reactor reactor = getEndpoint().getReactor();
     final Object key = getEndpoint().getSelectorObject();
     boolean reply = ExchangeHelper.isOutCapable(exchange);
-//    Event<?> event = ReactorMessageHelper.getReactorEvent(exchange);
-    Event<?> event = getEndpoint().getBinding().createReactorEvent(exchange, exchange.hasOut() ? exchange.getOut() : exchange.getIn());
+    // Event<?> event = ReactorMessageHelper.getReactorEvent(exchange);
+    Event<?> event =
+        getEndpoint().getBinding().createReactorEvent(exchange,
+            exchange.hasOut() ? exchange.getOut() : exchange.getIn());
     if (event != null) {
       if (reply) {
         LOG.debug("Sending to: {} the event: {}", key, event);
@@ -98,13 +100,13 @@ public class ReactorProducer extends DefaultAsyncProducer {
         // preserve headers
         MessageHelper.copyHeaders(exchange.getIn(), exchange.getOut(), false);
         exchange.setOut(new ReactorMessage(event, null));
-//        Map<String, Object> headers = out.getHeaders();
-//        for (String s : headers.keySet()) {
-//          if (s.startsWith("reactor.")) {
-//            headers.remove(s);
-//          }
-//        }
-//        ReactorMessageHelper.fillMessage(event, out);
+        // Map<String, Object> headers = out.getHeaders();
+        // for (String s : headers.keySet()) {
+        // if (s.startsWith("reactor.")) {
+        // headers.remove(s);
+        // }
+        // }
+        // ReactorMessageHelper.fillMessage(event, out);
       } finally {
         callback.done(false);
       }
