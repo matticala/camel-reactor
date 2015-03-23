@@ -35,7 +35,7 @@
         <connection>scm:git:git://github.com/matticala/camel-reactor.git</connection>
         <developerConnection>scm:git:git@github.com:matticala/camel-reactor.git
         </developerConnection>
-      <tag>HEAD</tag>
+      <tag>camel-2.14.x</tag>
   </scm>
 
     <name>Camel :: Reactor</name>
