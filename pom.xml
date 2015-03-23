@@ -126,7 +126,7 @@
             <distributionManagement>
                 <repository>
                     <id>bintray</id>
-                    <url>https://api.bintray.com/maven/matticala/camel-reactor/package</url>
+                    <url>https://api.bintray.com/content/matticala/maven/camel-reactor/</url>
                 </repository>
             </distributionManagement>
             <build>
