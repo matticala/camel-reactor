@@ -29,11 +29,6 @@ import java.util.Set;
 
 /**
  * @author matticala
- *         <p/>
- * @version $$Revision$$
- *          <p/>
- *          Last change: $$Date$$ Last changed by: $$Author$$
- * @since 21-nov-2014
  */
 public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?>> {
 

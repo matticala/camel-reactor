@@ -15,13 +15,14 @@
 package org.apache.camel.component.reactor;
 
 /**
- * Created by Matteo on 16/03/2015.
+ * @author matticala
  */
 public final class ReactorConstants {
 
-  public static final String HEADER_PREFIX = "_REACTOR_";
-  public static final String KEY = HEADER_PREFIX + "key";
-  public static final String REPLY_TO = HEADER_PREFIX + "replyTo";
+    public static final String HEADER_PREFIX = "REACTOR";
+    public static final String KEY = HEADER_PREFIX + "Key";
+    public static final String REPLY_TO = HEADER_PREFIX + "ReplyTo";
+    public static final String EVENT_ID = HEADER_PREFIX + "EventId";
 
   private ReactorConstants() {}
 }

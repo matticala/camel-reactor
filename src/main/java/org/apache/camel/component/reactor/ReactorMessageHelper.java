@@ -13,19 +13,15 @@
  */
 package org.apache.camel.component.reactor;
 
-import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import reactor.event.Event;
 
 import java.util.Map;
 
-import static org.apache.camel.component.reactor.ReactorConstants.HEADER_PREFIX;
-import static org.apache.camel.component.reactor.ReactorConstants.KEY;
-import static org.apache.camel.component.reactor.ReactorConstants.REPLY_TO;
+import static org.apache.camel.component.reactor.ReactorConstants.*;
 
 /**
- * @author Matteo
- * @version $$Revision$$ Created: 12/03/2015 10:15 Last change: $$Date$$ Last changed by: $$Author$$
+ * @author matticala
  */
 public abstract class ReactorMessageHelper {
 

@@ -25,7 +25,7 @@ import reactor.event.Event;
 import java.util.Map;
 
 /**
- * Created by Matteo on 13/03/2015.
+ * @author matticala
  */
 public class ReactorMessage extends DefaultMessage {
 
@@ -147,7 +147,7 @@ public class ReactorMessage extends DefaultMessage {
   }
 
   protected void ensureInitialHeaders() {
-    if (event != null && !hasPopulatedHeaders()) {
+      if (event == null && !hasPopulatedHeaders()) {
       super.setHeaders(createHeaders());
     }
   }

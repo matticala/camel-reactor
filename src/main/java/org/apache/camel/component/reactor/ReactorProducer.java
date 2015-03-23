@@ -16,7 +16,6 @@ package org.apache.camel.component.reactor;
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.Exchange;
 import org.apache.camel.InvalidPayloadRuntimeException;
-import org.apache.camel.Message;
 import org.apache.camel.impl.DefaultAsyncProducer;
 import org.apache.camel.util.ExchangeHelper;
 import org.apache.camel.util.MessageHelper;
@@ -26,15 +25,10 @@ import reactor.core.Reactor;
 import reactor.event.Event;
 import reactor.function.Consumer;
 
-import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
  * @author matticala
- * @version $$Revision$$
- *          <p/>
- *          Last change: $$Date$$ Last changed by: $$Author$$
- * @since 21-nov-2014
  */
 public class ReactorProducer extends DefaultAsyncProducer {
 

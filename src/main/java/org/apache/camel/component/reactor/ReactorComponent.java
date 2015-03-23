@@ -28,12 +28,8 @@ import static org.apache.camel.component.reactor.ReactorConfiguration.*;
 
 /**
  * A Camel Component for <a href="http://projectreactor.io/">Reactor</a>
- * 
+ *
  * @author matticala
- * @version $$Revision$$
- *          <p/>
- *          Last change: $$Date$$ Last changed by: $$Author$$
- * @since 21-nov-2014
  */
 public class ReactorComponent extends HeaderFilterStrategyComponent {
 

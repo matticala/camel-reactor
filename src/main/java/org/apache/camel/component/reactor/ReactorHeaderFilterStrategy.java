@@ -16,8 +16,7 @@ package org.apache.camel.component.reactor;
 import org.apache.camel.impl.DefaultHeaderFilterStrategy;
 
 /**
- * @author CalabroM
- * @version $$Revision$$ Created: 13/03/2015 10:12 Last change: $$Date$$ Last changed by: $$Author$$
+ * @author matticala
  */
 public class ReactorHeaderFilterStrategy extends DefaultHeaderFilterStrategy {
 
@@ -26,11 +25,9 @@ public class ReactorHeaderFilterStrategy extends DefaultHeaderFilterStrategy {
   }
 
   protected void init() {
-    getOutFilter().add(ReactorConstants.KEY);
-    getOutFilter().add(ReactorConstants.REPLY_TO);
-
-    setLowerCase(true);
-
-    setOutFilterPattern("(?i)(Camel|org\\.apache\\.camel)[\\.|a-z|A-z|0-9]*");
+//    setOutFilterPattern(String.format("%s(?!%s|%s)[\\.|a-z|A-Z|0-9]+", ReactorConstants.HEADER_PREFIX, ReactorConstants.KEY, ReactorConstants.REPLY_TO));
+      getOutFilter().add(ReactorConstants.KEY);
+      setOutFilterPattern("(?i)(Camel|org\\.apache\\.camel|JMS)[\\.|a-z|A-Z|0-9]*");
+      setCaseInsensitive(true);
   }
 }

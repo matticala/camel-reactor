@@ -27,10 +27,6 @@ import reactor.event.Event;
 
 /**
  * @author matticala
- * @version $$Revision$$
- *          <p/>
- *          Last change: $$Date$$ Last changed by: $$Author$$
- * @since 21-nov-2014
  */
 @ManagedResource(description = "Managed Reactor Endpoint")
 @UriEndpoint(scheme = "reactor", syntax = "reactor:type|uri|regex|object:selector",
@@ -143,10 +139,19 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
   }
 
   public Exchange createExchange(Event<?> event) {
-    Exchange exchange = createExchange(getExchangePattern());
+      boolean inOut = event.getReplyTo() != null;
+      ExchangePattern exchangePattern =
+              (inOut) ? ExchangePattern.InOptionalOut : ExchangePattern.InOnly;
+      Exchange exchange = createExchange(exchangePattern);
     exchange.setIn(new ReactorMessage(event, getBinding()));
     return exchange;
   }
+
+    public Exchange createExchange(ExchangePattern exchangePattern, Event<?> event) {
+        Exchange exchange = createExchange(exchangePattern);
+        exchange.setIn(new ReactorMessage(event, getBinding()));
+        return exchange;
+    }
 
   @Override
   @SuppressWarnings("unchecked")
