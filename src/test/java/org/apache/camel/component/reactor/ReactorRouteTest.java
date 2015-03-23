@@ -26,13 +26,13 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ReactorRouteTest extends ReactorBaseTestSupport {
 
-    protected String input = "vm:input";
-    protected String firstUriProd = "reactor:uri:/input/test";
-    protected String firstUriCons = "reactor:uri:/input/{destination}";
-    protected String secondUri = "reactor:type:" + String.class;
-    protected String output = "vm:output";
+  protected String input = "vm:input";
+  protected String firstUriProd = "reactor:uri:/input/test";
+  protected String firstUriCons = "reactor:uri:/input/{destination}";
+  protected String secondUri = "reactor:type:" + String.class;
+  protected String output = "vm:output";
 
-    protected String body = "PUPPA!";
+  protected String body = "PUPPA!";
 
 
   @Override
@@ -42,15 +42,12 @@ public class ReactorRouteTest extends ReactorBaseTestSupport {
 
       @Override
       public void configure() throws Exception {
-          this.from(input)
-                  .log(LoggingLevel.DEBUG, logger, String.format(LOG_STRING, ++step))
-                  .to(firstUriProd);
-          this.from(firstUriCons)
-                  .log(LoggingLevel.DEBUG, logger, String.format(LOG_STRING, ++step))
-                  .to(secondUri);
-          this.from(secondUri)
-                  .log(LoggingLevel.DEBUG, logger, String.format(LOG_STRING, ++step))
-                  .to(output);
+        this.from(input).log(LoggingLevel.DEBUG, logger, String.format(LOG_STRING, ++step))
+            .to(firstUriProd);
+        this.from(firstUriCons).log(LoggingLevel.DEBUG, logger, String.format(LOG_STRING, ++step))
+            .to(secondUri);
+        this.from(secondUri).log(LoggingLevel.DEBUG, logger, String.format(LOG_STRING, ++step))
+            .to(output);
       }
     });
     return ctx;
@@ -58,22 +55,22 @@ public class ReactorRouteTest extends ReactorBaseTestSupport {
 
   @Test
   public void test() throws Exception {
-      Endpoint in = context().getEndpoint(input);
-      Exchange exchange = in.createExchange(ExchangePattern.InOnly);
-      exchange.getIn().setBody(body);
+    Endpoint in = context().getEndpoint(input);
+    Exchange exchange = in.createExchange(ExchangePattern.InOnly);
+    exchange.getIn().setBody(body);
 
-      Producer p = in.createProducer();
+    Producer p = in.createProducer();
     p.start();
     p.process(exchange);
     p.stop();
 
-      Endpoint out = context().getEndpoint(output);
-      PollingConsumer c = out.createPollingConsumer();
+    Endpoint out = context().getEndpoint(output);
+    PollingConsumer c = out.createPollingConsumer();
     Exchange received = c.receive();
-      log.info("***** Received {} from {}", received, out);
+    log.info("***** Received {} from {}", received, out);
 
     assertTrue(received != null);
-      assertEquals(body, received.getIn().getBody());
+    assertEquals(body, received.getIn().getBody());
   }
 
 }

@@ -28,7 +28,7 @@ import static org.apache.camel.component.reactor.ReactorConfiguration.*;
 
 /**
  * A Camel Component for <a href="http://projectreactor.io/">Reactor</a>
- *
+ * 
  * @author mmcalabro
  */
 public class ReactorComponent extends HeaderFilterStrategyComponent {

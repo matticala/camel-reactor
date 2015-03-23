@@ -11,18 +11,18 @@ import org.slf4j.LoggerFactory;
  */
 public class ReactorBaseTestSupport extends CamelTestSupport {
 
-    protected static final Logger logger = LoggerFactory.getLogger(ReactorBaseTestSupport.class);
+  protected static final Logger logger = LoggerFactory.getLogger(ReactorBaseTestSupport.class);
 
-    protected static String LOG_STRING = "STEP-%d [headers=${in.headers}, body=${in.body}]";
-    protected static int port;
-    protected int step = 0;
+  protected static String LOG_STRING = "STEP-%d [headers=${in.headers}, body=${in.body}]";
+  protected static int port;
+  protected int step = 0;
 
-    @BeforeClass
-    public static void initPort() throws Exception {
-        port = AvailablePortFinder.getNextAvailable(20000);
-    }
+  @BeforeClass
+  public static void initPort() throws Exception {
+    port = AvailablePortFinder.getNextAvailable(20000);
+  }
 
-    public static int getPort() {
-        return port;
-    }
+  public static int getPort() {
+    return port;
+  }
 }

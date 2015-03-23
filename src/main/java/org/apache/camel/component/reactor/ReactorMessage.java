@@ -147,7 +147,7 @@ public class ReactorMessage extends DefaultMessage {
   }
 
   protected void ensureInitialHeaders() {
-      if (event == null && !hasPopulatedHeaders()) {
+    if (event == null && !hasPopulatedHeaders()) {
       super.setHeaders(createHeaders());
     }
   }

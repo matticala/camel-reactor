@@ -25,9 +25,10 @@ public class ReactorHeaderFilterStrategy extends DefaultHeaderFilterStrategy {
   }
 
   protected void init() {
-//    setOutFilterPattern(String.format("%s(?!%s|%s)[\\.|a-z|A-Z|0-9]+", ReactorConstants.HEADER_PREFIX, ReactorConstants.KEY, ReactorConstants.REPLY_TO));
-      getOutFilter().add(ReactorConstants.KEY);
-      setOutFilterPattern("(?i)(Camel|org\\.apache\\.camel|JMS)[\\.|a-z|A-Z|0-9]*");
-      setCaseInsensitive(true);
+    // setOutFilterPattern(String.format("%s(?!%s|%s)[\\.|a-z|A-Z|0-9]+",
+    // ReactorConstants.HEADER_PREFIX, ReactorConstants.KEY, ReactorConstants.REPLY_TO));
+    getOutFilter().add(ReactorConstants.KEY);
+    setOutFilterPattern("(?i)(Camel|org\\.apache\\.camel|JMS)[\\.|a-z|A-Z|0-9]*");
+    setCaseInsensitive(true);
   }
 }

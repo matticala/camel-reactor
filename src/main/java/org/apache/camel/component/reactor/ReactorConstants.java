@@ -19,10 +19,10 @@ package org.apache.camel.component.reactor;
  */
 public final class ReactorConstants {
 
-    public static final String HEADER_PREFIX = "REACTOR";
-    public static final String KEY = HEADER_PREFIX + "Key";
-    public static final String REPLY_TO = HEADER_PREFIX + "ReplyTo";
-    public static final String EVENT_ID = HEADER_PREFIX + "EventId";
+  public static final String HEADER_PREFIX = "REACTOR";
+  public static final String KEY = HEADER_PREFIX + "Key";
+  public static final String REPLY_TO = HEADER_PREFIX + "ReplyTo";
+  public static final String EVENT_ID = HEADER_PREFIX + "EventId";
 
   private ReactorConstants() {}
 }

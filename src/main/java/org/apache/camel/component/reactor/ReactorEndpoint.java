@@ -139,19 +139,19 @@ public class ReactorEndpoint extends DefaultEndpoint implements HeaderFilterStra
   }
 
   public Exchange createExchange(Event<?> event) {
-      boolean inOut = event.getReplyTo() != null;
-      ExchangePattern exchangePattern =
-              (inOut) ? ExchangePattern.InOptionalOut : ExchangePattern.InOnly;
-      Exchange exchange = createExchange(exchangePattern);
+    boolean inOut = event.getReplyTo() != null;
+    ExchangePattern exchangePattern =
+        (inOut) ? ExchangePattern.InOptionalOut : ExchangePattern.InOnly;
+    Exchange exchange = createExchange(exchangePattern);
     exchange.setIn(new ReactorMessage(event, getBinding()));
     return exchange;
   }
 
-    public Exchange createExchange(ExchangePattern exchangePattern, Event<?> event) {
-        Exchange exchange = createExchange(exchangePattern);
-        exchange.setIn(new ReactorMessage(event, getBinding()));
-        return exchange;
-    }
+  public Exchange createExchange(ExchangePattern exchangePattern, Event<?> event) {
+    Exchange exchange = createExchange(exchangePattern);
+    exchange.setIn(new ReactorMessage(event, getBinding()));
+    return exchange;
+  }
 
   @Override
   @SuppressWarnings("unchecked")
