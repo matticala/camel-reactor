@@ -28,7 +28,7 @@ import reactor.function.Consumer;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 public class ReactorProducer extends DefaultAsyncProducer {
 

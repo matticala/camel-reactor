@@ -15,7 +15,7 @@
 package org.apache.camel.component.reactor;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 public enum SelectorType {
   type, uri, object, regex, set, predicate

@@ -22,7 +22,7 @@ import static org.apache.camel.component.reactor.ReactorConstants.*;
  * A Strategy used to convert between a Camel {@link Exchange} and {@link ReactorMessage} to and
  * from a Reactor {@link reactor.event.Event}
  *
- * @author matticala
+ * @author mmcalabro
  */
 public class ReactorBinding {
 

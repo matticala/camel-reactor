@@ -16,7 +16,7 @@ package org.apache.camel.component.reactor;
 import org.apache.camel.impl.DefaultHeaderFilterStrategy;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 public class ReactorHeaderFilterStrategy extends DefaultHeaderFilterStrategy {
 

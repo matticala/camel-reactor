@@ -26,7 +26,7 @@ import reactor.core.Reactor;
 import reactor.event.Event;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 @ManagedResource(description = "Managed Reactor Endpoint")
 @UriEndpoint(scheme = "reactor", syntax = "reactor:type|uri|regex|object:selector",

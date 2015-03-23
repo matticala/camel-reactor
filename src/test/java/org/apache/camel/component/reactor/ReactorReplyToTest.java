@@ -30,8 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @author CalabroM
- * @version $$Revision$$ Created: 27/11/2014 10:58 Last change: $$Date$$ Last changed by: $$Author$$
+ * @author mmcalabro
  */
 @RunWith(JUnit4.class)
 public class ReactorReplyToTest extends ReactorBaseTestSupport {

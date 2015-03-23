@@ -25,7 +25,7 @@ import reactor.event.Event;
 import java.util.Map;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 public class ReactorMessage extends DefaultMessage {
 

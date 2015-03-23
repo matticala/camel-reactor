@@ -14,11 +14,7 @@ import org.junit.runners.JUnit4;
 import reactor.event.Event;
 
 /**
- * @author CalabroM
- * @version $$Revision$$
- *          Created: 23/03/2015 13:29
- *          Last change: $$Date$$
- *          Last changed by: $$Author$$
+ * @author mmcalabro
  */
 @RunWith(JUnit4.class)
 public class ReactorToJmsToFileRouteTest extends ReactorBaseTestSupport {

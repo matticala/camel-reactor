@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 public class ReactorConsumer extends DefaultConsumer implements Consumer<Event<?>> {
 

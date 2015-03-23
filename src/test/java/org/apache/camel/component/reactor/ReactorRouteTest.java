@@ -21,11 +21,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 /**
- * @author CalabroM
- * @version $$Revision$$
- *          <p/>
- *          Last change: $$Date$$ Last changed by: $$Author$$
- * @since 26-nov-2014
+ * @author mmcalabro
  */
 @RunWith(JUnit4.class)
 public class ReactorRouteTest extends ReactorBaseTestSupport {

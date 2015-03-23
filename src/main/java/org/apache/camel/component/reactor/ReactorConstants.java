@@ -15,7 +15,7 @@
 package org.apache.camel.component.reactor;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 public final class ReactorConstants {
 

@@ -20,7 +20,7 @@ import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 @UriParams
 public class ReactorConfiguration implements Cloneable {

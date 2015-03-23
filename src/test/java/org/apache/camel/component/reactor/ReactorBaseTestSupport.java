@@ -7,11 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author CalabroM
- * @version $$Revision$$
- *          Created: 23/03/2015 15:37
- *          Last change: $$Date$$
- *          Last changed by: $$Author$$
+ * @author mmcalabro
  */
 public class ReactorBaseTestSupport extends CamelTestSupport {
 

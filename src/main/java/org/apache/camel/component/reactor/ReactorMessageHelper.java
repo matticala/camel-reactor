@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.apache.camel.component.reactor.ReactorConstants.*;
 
 /**
- * @author matticala
+ * @author mmcalabro
  */
 public abstract class ReactorMessageHelper {
 
